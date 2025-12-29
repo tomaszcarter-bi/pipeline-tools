@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Usage: watch-pipeline <pipeline-id> [check-interval-seconds] [repo]
+#
+# Examples:
+#   watch-pipeline 2236689681
+#   watch-pipeline 2236689681 60
+#   watch-pipeline 2236689681 30 boardiq/other-repo
+
+PIPELINE_ID="$1"
+CHECK_INTERVAL="${2:-30}"
+REPO="${3:-boardiq/monorepo}"
+
+echo "Monitoring pipeline ID: $PIPELINE_ID in $REPO"
+
+# Monitor until completion
+while true; do
+  # Get pipeline status from list (search for the pipeline ID)
+  PIPELINE_LINE=$(glab ci list -R "$REPO" --per-page 100 | grep "#$PIPELINE_ID" | head -1 || echo "")
+
+  if [[ -z "$PIPELINE_LINE" ]]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Pipeline #$PIPELINE_ID not found in recent pipelines"
+    exit 1
+  fi
+
+  # Extract status (first column, remove parentheses and bullet)
+  STATUS=$(echo "$PIPELINE_LINE" | awk '{print $1}' | tr -d '()•' | xargs)
+
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - Pipeline #$PIPELINE_ID status: $STATUS"
+
+  case "$STATUS" in
+    success)
+      echo "Pipeline completed successfully"
+      exit 0
+      ;;
+    failed|canceled|skipped)
+      echo "Pipeline finished with status: $STATUS"
+      exit 1
+      ;;
+    running|pending|created|waiting_for_resource|preparing|scheduled|manual)
+      echo "Pipeline still in progress. Checking again in ${CHECK_INTERVAL}s..."
+      sleep "$CHECK_INTERVAL"
+      ;;
+    *)
+      echo "Unknown status: $STATUS. Checking again in ${CHECK_INTERVAL}s..."
+      sleep "$CHECK_INTERVAL"
+      ;;
+  esac
+done
