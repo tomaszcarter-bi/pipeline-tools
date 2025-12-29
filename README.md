@@ -40,6 +40,39 @@ export PATH="$PATH:$HOME/.local/bin"
 
 ## Tools
 
+### get-pipeline-image-tag
+
+Extract the MR image tag from the last job of a GitLab pipeline.
+
+**Usage:**
+```bash
+get-pipeline-image-tag <pipeline-id> [repo]
+```
+
+**Examples:**
+
+```bash
+# Get image tag from a pipeline (default: boardiq/monorepo)
+get-pipeline-image-tag 2236689681
+
+# Different repository
+get-pipeline-image-tag 2236689681 boardiq/other-repo
+
+# Capture the tag in a variable
+IMAGE_TAG=$(get-pipeline-image-tag 2236689681)
+echo "Image tag: $IMAGE_TAG"
+```
+
+**Output Format:**
+
+The tag follows the pattern: `MR-<number>-<hash>-<timestamp>`
+
+Example: `MR-11391-dfba5515-202512291728`
+
+**Exit Codes:**
+- `0` - Tag found successfully
+- `1` - No jobs found or no tag in trace
+
 ### watch-pipeline
 
 Monitor a GitLab pipeline until completion.
@@ -88,6 +121,23 @@ watch-pipeline 2236689681 && {
 } || {
     echo "Pipeline failed, skipping deployment"
 }
+```
+
+## Combining Tools
+
+Use both tools together for automated workflows:
+
+```bash
+# Wait for pipeline and extract image tag
+watch-pipeline 2236689681 && {
+    IMAGE_TAG=$(get-pipeline-image-tag 2236689681)
+    echo "Pipeline succeeded with image tag: $IMAGE_TAG"
+    # Deploy using the tag
+    # kubectl set image deployment/myapp myapp=registry/repo:$IMAGE_TAG
+}
+
+# One-liner version
+watch-pipeline 2236689681 && echo "Image tag: $(get-pipeline-image-tag 2236689681)"
 ```
 
 ## Configuration

@@ -36,9 +36,12 @@ fi
 # Copy scripts
 echo "Installing scripts to $INSTALL_DIR..."
 cp -f bin/watch-pipeline "$INSTALL_DIR/watch-pipeline"
+cp -f bin/get-pipeline-image-tag "$INSTALL_DIR/get-pipeline-image-tag"
 chmod +x "$INSTALL_DIR/watch-pipeline"
+chmod +x "$INSTALL_DIR/get-pipeline-image-tag"
 
 echo -e "${GREEN}✓${NC} Installed watch-pipeline"
+echo -e "${GREEN}✓${NC} Installed get-pipeline-image-tag"
 
 # Check if INSTALL_DIR is in PATH
 if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
@@ -56,10 +59,11 @@ else
 fi
 
 echo "Available commands:"
+echo "  get-pipeline-image-tag <pipeline-id> [repo]"
 echo "  watch-pipeline <pipeline-id> [interval] [repo]"
 echo ""
 echo "Examples:"
+echo "  get-pipeline-image-tag 2236689681"
 echo "  watch-pipeline 2236689681"
 echo "  watch-pipeline 2236689681 10"
-echo "  watch-pipeline 2236689681 30 boardiq/other-repo"
 echo ""

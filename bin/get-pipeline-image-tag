@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Usage: get-pipeline-image-tag <pipeline-id> [repo]
+#
+# Examples:
+#   get-pipeline-image-tag 2236689681
+#   get-pipeline-image-tag 2236689681 boardiq/other-repo
+
+PIPELINE_ID="$1"
+REPO="${2:-boardiq/monorepo}"
+
+# URL encode the repo name
+REPO_ENCODED=$(echo "$REPO" | sed 's/\//%2F/g')
+
+# Get all jobs for the pipeline and find the last one (highest ID)
+LAST_JOB=$(glab api "/projects/$REPO_ENCODED/pipelines/$PIPELINE_ID/jobs" | jq -r 'sort_by(.id) | reverse | .[0]')
+
+if [ "$LAST_JOB" == "null" ] || [ -z "$LAST_JOB" ]; then
+  echo "Error: No jobs found for pipeline $PIPELINE_ID" >&2
+  exit 1
+fi
+
+JOB_ID=$(echo "$LAST_JOB" | jq -r '.id')
+JOB_NAME=$(echo "$LAST_JOB" | jq -r '.name')
+JOB_STATUS=$(echo "$LAST_JOB" | jq -r '.status')
+
+echo "Last job: $JOB_NAME (ID: $JOB_ID, Status: $JOB_STATUS)" >&2
+
+# Get the job trace and extract the MR image tag
+IMAGE_TAG=$(glab ci trace "$JOB_ID" -R "$REPO" 2>/dev/null | grep -oE "MR-[0-9]+-[a-f0-9]+-[0-9]+" | head -1 || echo "")
+
+if [ -z "$IMAGE_TAG" ]; then
+  echo "Error: No MR image tag found in job trace" >&2
+  exit 1
+fi
+
+echo "$IMAGE_TAG"
