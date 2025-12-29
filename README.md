@@ -12,7 +12,7 @@ Command-line utilities for monitoring GitLab CI/CD pipelines.
 ### Quick Install
 
 ```bash
-git clone https://github.com/yourusername/pipeline-tools.git
+git clone https://github.com/tomaszcarter-bi/pipeline-tools.git
 cd pipeline-tools
 ./install.sh
 ```
